@@ -1,9 +1,8 @@
 {
-  "name": "Tahjod — Quran Prayer Revision",
+  "name": "Tahjod \u2014 Quran Revision",
   "short_name": "Tahjod",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f4f1e8",
-  "theme_color": "#173f35",
-  "description": "Prayer-based Quran memorization and revision planner"
+  "background_color": "#f5f2e9",
+  "theme_color": "#153f35"
 }
