@@ -1,36 +1,46 @@
-const $=x=>document.getElementById(x),KEY='tahjod-v3';
-let s=JSON.parse(localStorage.getItem(KEY)||'null')||{cycle:1,completed:{},history:[],cycles:[],plans:{},perDay:6,next:1};
-const day=d=>{let x=d||new Date();return new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10)}
-const fmt=iso=>new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'short'}).format(new Date(iso));
+const $=id=>document.getElementById(id),KEY='tahjod-v4';
+let s=JSON.parse(localStorage.getItem(KEY)||'null')||{version:4,cycle:1,completed:{},history:[],cycles:[],next:1,showCount:4,lastBackup:null};
 function save(){localStorage.setItem(KEY,JSON.stringify(s))}
-function makePlan(date,start=s.next){let arr=[];for(let i=0;i<s.perDay;i++)arr.push(((start-1+i)%240)+1);s.plans[date]={quarters:arr,created:new Date().toISOString()};save();return arr}
-function getPlan(){return s.plans[day()]?.quarters||makePlan(day())}
+function localDay(iso=new Date().toISOString()){let d=new Date(iso);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fmt(iso){return new Intl.DateTimeFormat(undefined,{dateStyle:'medium',timeStyle:'medium'}).format(new Date(iso))}
 function coverage(){return Object.keys(s.completed).length}
+function pct(){return coverage()/240*100}
+function tonightCount(){let d=localDay();return s.history.filter(x=>x.cycle===s.cycle&&localDay(x.time)===d).length}
+function sequence(n=s.showCount){return Array.from({length:n},(_,i)=>((s.next-1+i)%240)+1)}
 function complete(q){
- let now=new Date().toISOString(),already=!!s.completed[q];
- if(!already)s.completed[q]=now;
- s.history.push({quarter:q,time:now,cycle:s.cycle,date:day(),repeat:already});
- let p=getPlan(),idx=p.indexOf(q);if(idx>=0){let remaining=p.filter(x=>!s.completed[x]);}
- s.next=q%240+1;
- if(coverage()===240){s.cycles.push({cycle:s.cycle,completedAt:now});alert('Quran Revision Cycle Completed — 100%');s.cycle++;s.completed={};s.next=1;s.plans={};}
+ if(q!==s.next&&!confirm(`Quarter ${q} is not the next sequential Rubʿ (Quarter ${s.next}). Complete it anyway?`))return;
+ let now=new Date().toISOString(),repeat=!!s.completed[q];if(!repeat)s.completed[q]=now;
+ s.history.push({quarter:q,time:now,cycle:s.cycle,repeat});
+ if(q===s.next)s.next=q%240+1;
+ if(coverage()===240){
+   s.cycles.push({cycle:s.cycle,completedAt:now,startedAt:s.history.find(x=>x.cycle===s.cycle)?.time||now});
+   save();render();
+   setTimeout(()=>{if(confirm(`Alhamdulillah — Quran Revision Cycle ${s.cycle} completed at ${fmt(now)}.\n\nStart the next Quran cycle now?`)){s.cycle++;s.completed={};s.next=1;save();render()}},50);return;
+ }
  save();render();
 }
-function planHTML(){
- let p=getPlan();return p.map(q=>{let t=s.completed[q];return `<div class="item ${t?'done':''}"><div class="row"><div><b>Quarter ${q}</b><div class="sub">Rubʿ al-Hizb ${q} • Juz ${Math.floor((q-1)/8)+1}</div>${t?`<div class="sub">Completed: ${fmt(t)}</div>`:''}</div>${t?'<span class="pill">Complete ✓</span>':`<button class="btn primary" onclick="complete(${q})">Complete</button>`}</div></div>`}).join('')
+function portions(){
+ return sequence().map(q=>{let done=s.completed[q];return `<div class="portion ${done?'donebox':''}"><div class="row"><div><b>Rubʿ ${q}</b><div class="sub">Juz ${Math.floor((q-1)/8)+1} • Hizb ${Math.floor((q-1)/4)+1}</div>${done?`<div class="sub">Completed ${fmt(done)}</div>`:''}</div>${done?'<span class="pill">Completed ✓</span>':`<button class="btn primary" onclick="complete(${q})">Complete</button>`}</div></div>`}).join('')
 }
 function render(){
- let c=coverage(),pct=(c/240*100),p=getPlan(),doneToday=p.filter(q=>!!s.completed[q]).length,tp=p.length?doneToday/p.length*100:0;
- $('heroPct').textContent=`${pct.toFixed(1)}% of the Holy Quran`;$('heroBar').style.width=pct+'%';$('heroText').textContent=`${c} / 240 quarters completed • Cycle ${s.cycle}`;
- $('coverage').textContent=pct.toFixed(1)+'%';$('todayPct').textContent=Math.round(tp)+'%';$('completed').textContent=c;$('nextQ').textContent=s.next;$('dateTitle').textContent=new Intl.DateTimeFormat(undefined,{dateStyle:'full'}).format(new Date());$('plan').innerHTML=planHTML();
- $('quarterGrid').innerHTML=Array.from({length:240},(_,i)=>i+1).map(q=>`<button class="q ${s.completed[q]?'done':''}" onclick="detail(${q})">${q}</button>`).join('');
- $('historyList').innerHTML=s.history.slice().reverse().map(h=>`<div><b>Quarter ${h.quarter}</b> • ${fmt(h.time)} • Cycle ${h.cycle}${h.repeat?' • repeat':''}</div>`).join('')||'<p class="sub">No completions yet.</p>';
- $('cycles').innerHTML=s.cycles.slice().reverse().map(c=>`<div class="item"><b>Cycle ${c.cycle}</b><div class="sub">100% completed ${fmt(c.completedAt)}</div></div>`).join('')||'<p class="sub">No full Quran cycle completed yet.</p>';
- $('perDay').value=s.perDay;$('startQ').value=s.next;
+ let p=pct(),c=coverage();$('pct').textContent=p.toFixed(1)+'%';$('bar').style.width=p+'%';$('progressText').textContent=`${c} / 240 Rubʿ completed • Cycle ${s.cycle}`;$('count').textContent=c;$('next').textContent=s.next;$('tonight').textContent=tonightCount();$('cycle').textContent=s.cycle;$('currentPortions').innerHTML=portions();$('quranPct').textContent=p.toFixed(1)+'% completed';
+ $('grid').innerHTML=Array.from({length:240},(_,i)=>i+1).map(q=>`<button class="q ${s.completed[q]?'done':''}" onclick="detail(${q})">${q}</button>`).join('');
+ $('hist').innerHTML=s.history.slice().reverse().map(h=>`<div><b>Rubʿ ${h.quarter}</b> • ${fmt(h.time)} • Cycle ${h.cycle}${h.repeat?' • repeat':''}</div>`).join('')||'<p class="sub">No revision recorded yet.</p>';
+ $('cycles').innerHTML=s.cycles.slice().reverse().map(x=>`<div class="portion"><b>Quran Cycle ${x.cycle} — 100%</b><div class="sub">Completed ${fmt(x.completedAt)}</div></div>`).join('')||'<p class="sub">No full Quran cycle completed yet.</p>';
+ $('showCount').value=s.showCount;$('nextInput').value=s.next;$('backupStatus').innerHTML=s.lastBackup?`Last backup created: <b>${fmt(s.lastBackup)}</b>`:'No backup created yet. Create one and save it to Google Drive.';
 }
-function detail(q){let logs=s.history.filter(h=>h.quarter===q).reverse();$('detail').innerHTML=`<h3>Quarter ${q}</h3><p>Current cycle: <b>${s.completed[q]?'Completed':'Not completed'}</b></p>${s.completed[q]?`<p class="sub">First completion this cycle: ${fmt(s.completed[q])}</p>`:''}<p class="sub">Total recorded completions: ${logs.length}</p>${logs.slice(0,5).map(h=>`<div class="item">${fmt(h.time)} • Cycle ${h.cycle}</div>`).join('')}`}
-$('tomorrowBtn').onclick=()=>{let d=new Date();d.setDate(d.getDate()+1);let k=day(d);if(s.plans[k]&&!confirm('Tomorrow already has a plan. Replace it?'))return;makePlan(k,s.next);alert('Tomorrow’s plan prepared: '+s.plans[k].quarters.map(x=>'Q'+x).join(', '))};
-$('saveSettings').onclick=()=>{s.perDay=Math.max(1,Math.min(20,+$('perDay').value||6));s.next=Math.max(1,Math.min(240,+$('startQ').value||1));delete s.plans[day()];save();render()};
-$('exportBtn').onclick=()=>{let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,2)],{type:'application/json'}));a.download='tahjod-progress.json';a.click()};
-$('resetBtn').onclick=()=>{if(confirm('Delete all Tahjod progress and history?')){localStorage.removeItem(KEY);location.reload()}};
+function detail(q){let logs=s.history.filter(x=>x.quarter===q).reverse();$('detail').innerHTML=`<h3>Rubʿ ${q}</h3><p>Current cycle: <b>${s.completed[q]?'Completed':'Not completed'}</b></p>${s.completed[q]?`<p class="sub">Completed: ${fmt(s.completed[q])}</p>`:''}<p class="sub">All recorded completions: ${logs.length}</p>${logs.slice(0,10).map(x=>`<div class="portion">${fmt(x.time)} • Cycle ${x.cycle}${x.repeat?' • repeat':''}</div>`).join('')}`}
+function createBackup(){
+ let now=new Date().toISOString();s.lastBackup=now;save();
+ let payload={app:'Tahjod',backupVersion:1,createdAt:now,data:s},blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download=`Tahjod-Backup-${localDay(now)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);render();
+}
+function restore(file){
+ let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result),data=x.app==='Tahjod'?x.data:x;if(!data||typeof data.cycle!=='number'||!data.history||!data.completed)throw Error();if(!confirm('Restore this Tahjod backup? Current local progress will be replaced.'))return;s=data;save();render();alert('Tahjod backup restored successfully.')}catch(e){alert('This is not a valid Tahjod backup file.')}};r.readAsText(file);
+}
+$('moreBtn').onclick=()=>{s.showCount=Math.min(20,s.showCount+2);save();render()};
+$('saveBtn').onclick=()=>{s.showCount=Math.max(1,Math.min(20,+$('showCount').value||4));s.next=Math.max(1,Math.min(240,+$('nextInput').value||1));save();render()};
+$('backupBtn').onclick=createBackup;$('restoreInput').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};
+$('resetBtn').onclick=()=>{if(confirm('Delete all Quran revision progress, timestamps and cycle history from this device?')){localStorage.removeItem(KEY);location.reload()}};
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.v).classList.add('active')});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');window.complete=complete;window.detail=detail;render();

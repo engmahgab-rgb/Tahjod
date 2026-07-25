@@ -1,8 +1,9 @@
 {
-  "name": "Tahjod \u2014 Quran Revision",
+  "name": "Tahjod \u2014 After-Isha Quran Revision",
   "short_name": "Tahjod",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f5f2e9",
-  "theme_color": "#153f35"
+  "theme_color": "#143e34",
+  "description": "Track sequential Quran revision after Isha with exact completion timestamps and backup."
 }
