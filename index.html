@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173f35">
+<link rel="manifest" href="manifest.json">
+<title>Tahjod — Quran Prayer Revision</title>
+<style>
+:root{--bg:#f4f1e8;--card:#fffdf7;--ink:#173f35;--muted:#6f766f;--gold:#b58a45;--line:#ded9ca;--weak:#a34a3d;--ok:#3d765f}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:#26342f}
+.wrap{max-width:980px;margin:auto;padding:18px 16px 90px}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{font-weight:900;font-size:24px;color:var(--ink)}.arabic{font-family:serif;font-size:26px;direction:rtl}.tabs{display:flex;gap:7px;overflow:auto;padding:8px 0 12px;position:sticky;top:0;background:var(--bg);z-index:5}
+.tab,.btn{border:1px solid var(--line);background:var(--card);padding:10px 13px;border-radius:12px;font-weight:750;color:var(--ink);cursor:pointer;white-space:nowrap}.tab.active,.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.view{display:none}.view.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 4px 18px #00000008}
+.metric b{display:block;font-size:25px;color:var(--ink)}.label{font-size:11px;font-weight:850;letter-spacing:.08em;color:var(--muted)}h2,h3{color:var(--ink);margin:5px 0 10px}.sub{color:var(--muted);font-size:14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.prayer{border-left:4px solid var(--gold)}.rakah{padding:12px 0;border-top:1px solid var(--line)}.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:4px 8px;font-size:12px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.quarters{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}.q{padding:10px 4px;text-align:center;border:1px solid var(--line);border-radius:9px;background:white;font-size:12px}.q.mem{background:#e7f0e9}.q.partial{background:#f4ead4}.q.weak{outline:2px solid #d6a69c}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-size:13px;font-weight:750}select,input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:white;margin-top:5px}.notice{padding:12px;border-radius:12px;background:#f4ead4}.history{font-size:13px}.history div{padding:9px 0;border-bottom:1px solid var(--line)}
+.hero{padding:20px;background:linear-gradient(135deg,#173f35,#285f50);color:white;border-radius:20px;margin-bottom:12px}.hero h2{color:white}.hero .sub{color:#e4eee9}
+@media(max-width:650px){.grid{grid-template-columns:1fr 1fr}.quarters{grid-template-columns:repeat(5,1fr)}.form{grid-template-columns:1fr}.wrap{padding:12px 11px 85px}.arabic{font-size:20px}}
+</style>
+</head>
+<body><div class="wrap">
+<header><div><div class="brand">TAHJOD</div><div class="sub">Quran memorization through Salah</div></div><div class="arabic">وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا</div></header>
+<nav class="tabs">
+<button class="tab active" data-v="home">Today</button><button class="tab" data-v="plan">Prayer Plan</button><button class="tab" data-v="quarters">240 Quarters</button><button class="tab" data-v="weak">Weak Links</button><button class="tab" data-v="settings">Settings</button>
+</nav>
+
+<section id="home" class="view active">
+<div class="hero"><span class="label">PRAYER-BASED REVISION</span><h2>Prepare → Recite in Salah → Evaluate</h2><div class="sub">Preparation happens before prayer. During Salah, no phone interaction is required.</div></div>
+<div class="grid"><div class="card metric"><span class="label">MEMORIZED</span><b id="mMem">0</b><span class="sub">Quarters</span></div><div class="card metric"><span class="label">REVISION DUE</span><b id="mDue">0</b><span class="sub">Quarters</span></div><div class="card metric"><span class="label">PRAYER TODAY</span><b id="mPrayer">0</b><span class="sub">Assignments</span></div><div class="card metric"><span class="label">WEAK ITEMS</span><b id="mWeak">0</b><span class="sub">Ayahs/transitions</span></div></div>
+<div class="card"><span class="label">TODAY'S QURAN</span><h2>Before prayer</h2><div id="todayPlan"></div></div>
+<div class="card"><h3>After Salah</h3><p class="sub">An assigned portion counts only when you confirm that you recited that portion.</p><div id="afterPrayer"></div></div>
+</section>
+
+<section id="plan" class="view"><div class="card"><span class="label">PRAYER REVISION</span><h2>Today's Prayer Revision</h2><div id="fullPlan"></div></div>
+<div class="card"><h3>Rotation strategy</h3><select id="strategy"><option>Recent + Old / Spaced Revision</option><option>Sequential</option><option>Weakest First</option><option>Spaced Repetition</option><option>Recent + Old</option><option>Custom</option></select><div class="actions"><button class="btn primary" id="generate">Generate today's plan</button></div></div></section>
+
+<section id="quarters" class="view"><div class="card"><span class="label">QURAN MAP</span><h2>240 Rubʿ al-Hizb</h2><p class="sub">Quarter means an actual Rubʿ al-Hizb. This app does not estimate quarters from page, word, character, or Ayah counts.</p><div class="quarters" id="quarterGrid"></div></div><div class="card" id="qDetail"><h3>Select a quarter</h3></div></section>
+
+<section id="weak" class="view"><div class="card"><span class="label">MEMORY INTELLIGENCE</span><h2>Weak Ayahs & Transitions</h2><p class="sub">Transitions are independent memory items. Knowing two Ayahs individually does not mean the transition between them is strong.</p><div id="weakList"></div></div><div class="card"><h3>Revision history</h3><div class="history" id="history"></div></div></section>
+
+<section id="settings" class="view">
+<div class="card"><h2>Prayer preferences</h2><div class="form" id="prayerSettings"></div></div>
+<div class="card"><h3>Memorized Quran</h3><p class="sub">Prayer planning normally uses only fully memorized quarters. Partial quarters are never auto-assigned.</p><div class="form"><div><label>Quarter number</label><input id="markQuarter" type="number" min="1" max="240" value="1"></div><div><label>Status</label><select id="markStatus"><option value="memorized">Memorized</option><option value="partial">Partially Memorized</option><option value="none">Not Memorized</option></select></div></div><div class="actions"><button class="btn primary" id="saveQuarter">Save</button></div></div>
+<div class="card"><h3>Data</h3><button class="btn" id="exportData">Export progress</button> <button class="btn" id="reset">Reset local data</button></div>
+</section></div>
+<script src="app.js"></script></body></html>
